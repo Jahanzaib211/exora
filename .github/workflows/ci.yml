@@ -116,7 +116,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Build
         run: docker compose build
-      - name: Start (no .env: the secret is generated on the volume)
+      - name: Start without a .env (the secret is generated on the volume)
         run: docker compose up -d
       - name: Wait until healthy
         run: |
