@@ -56,7 +56,8 @@ The setup script installs uv if it is missing, creates `.venv` from `uv.lock`, b
 
 ### First steps in the app
 
-1. **Discovery → New run**: pick a source (OpenStreetMap needs no key) and a place, e.g. lawyers in Manchester.
+0. Optional: load five fictional example accounts to explore with: `uv run prospector import` (Docker: `docker compose exec app prospector import`). The same command imports your own CSV in the [example's format](playbook/accounts.example.csv).
+1. **Discovery → New run**: pick a source (GLEIF, Wikidata and OpenStreetMap need no key) and a place, e.g. lawyers in Manchester.
 2. Watch **Data engine** as runs complete, then open **Companies** to review, enrich and mark records ready.
 3. Edit [`playbook/PLAN.md`](playbook/PLAN.md) to make the Plan, KPIs, Routine and Events screens yours. The app re-reads it automatically.
 4. Invite teammates under **Team**.

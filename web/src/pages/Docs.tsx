@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, Col, Input, Menu, Row, Space, Typography } from "antd";
 import { useMemo } from "react";
-import Markdown from "react-markdown";
+import Markdown, { type Components } from "react-markdown";
 import { useSearchParams } from "react-router";
 import remarkGfm from "remark-gfm";
 import { api } from "../api";
 import { EmptyState } from "../components/EmptyState";
-import { QueryBoundary } from "../components/QueryBoundary";
+import { QueryBoundary, TableSkeleton } from "../components/QueryBoundary";
 import { fmtDateTime, humanise } from "../lib/format";
 import { qk } from "../lib/query-keys";
 import { REFRESH } from "../live";
@@ -15,6 +15,22 @@ import type { Doc, DocGroup } from "../types/api";
 
 /** Opened when the URL names no document: the first of these that the catalogue serves, else its first entry. */
 const START_DOCS = ["README.md", "00_README_Start_Here.md"];
+
+/**
+ * The CSP allows same-origin images only, so a remote image (a README badge, say) would be a blocked
+ * request and a console error. It renders as its alt text instead, with the URL on hover; documents
+ * therefore never load third-party images or trackers. Plain text rather than a link, because badges
+ * usually sit inside a link already and nested anchors are invalid HTML.
+ */
+const MARKDOWN_COMPONENTS: Components = {
+  img: ({ src, alt }) => {
+    const url = typeof src === "string" ? src : "";
+    if (/^(https?:)?\/\//i.test(url)) {
+      return <span title={url}>{alt || "image"}</span>;
+    }
+    return <img src={url} alt={alt ?? ""} />;
+  },
+};
 
 export function Docs() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -128,28 +144,45 @@ export function Docs() {
               )
             }
           >
-            <QueryBoundary
-              q={doc}
-              label="this document"
-              skeletonRows={12}
-              empty={
-                <EmptyState
-                  title="Pick a document"
-                  hint="Choose one from the list to read it here."
-                />
-              }
-            >
-              {(data) => (
-                <article className="md">
-                  {/*
-                    No `rehype-raw` and the default `urlTransform`, so raw HTML in the
-                    markdown is escaped and `javascript:` links are neutralised. Safe to
-                    render untrusted documents as-is.
-                  */}
-                  <Markdown remarkPlugins={[remarkGfm]}>{data.markdown}</Markdown>
-                </article>
-              )}
-            </QueryBoundary>
+            {selected ? (
+              <QueryBoundary
+                q={doc}
+                label="this document"
+                skeletonRows={12}
+                empty={
+                  <EmptyState
+                    title="Pick a document"
+                    hint="Choose one from the list to read it here."
+                  />
+                }
+              >
+                {(data) => (
+                  <article className="md">
+                    {/*
+                      No `rehype-raw` and the default `urlTransform`, so raw HTML in the
+                      markdown is escaped and `javascript:` links are neutralised. Safe to
+                      render untrusted documents as-is.
+                    */}
+                    <Markdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+                      {data.markdown}
+                    </Markdown>
+                  </article>
+                )}
+              </QueryBoundary>
+            ) : groups.isPending ? (
+              // No document can be chosen until the list arrives. A disabled query stays "pending"
+              // forever, so the skeleton is tied to the list rather than to the document query.
+              <TableSkeleton />
+            ) : (
+              <EmptyState
+                title={groups.isError ? "The document list could not be loaded" : "No documents yet"}
+                hint={
+                  groups.isError
+                    ? "Use Retry in the list on the left."
+                    : "Add markdown files under playbook/ or docs/ and they appear here."
+                }
+              />
+            )}
           </Card>
         </Col>
       </Row>

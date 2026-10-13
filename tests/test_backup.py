@@ -51,6 +51,7 @@ def test_url_parsing_absolute_and_relative():
     # Windows absolute: SQLAlchemy drops the leading slash and keeps the drive letter.
     if os.name == "nt":
         assert backup_mod.sqlite_path("sqlite:///C:/data/x.db") == Path("C:/data/x.db")
+        assert backup_mod.sqlite_path("sqlite:////C:/data/x.db") == Path("C:/data/x.db")
     # Relative paths resolve against the project root, not the caller's cwd.
     rel = backup_mod.sqlite_path("sqlite:///data/x.db")
     assert rel.name == "x.db" and rel.parent.name == "data"

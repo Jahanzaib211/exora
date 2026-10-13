@@ -25,9 +25,9 @@ import {
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { api, post } from "../api";
+import { OUTREACH_ENABLED } from "../brand";
 import { EmptyState } from "../components/EmptyState";
 import { REFRESH } from "../live";
-import { OUTREACH_ENABLED } from "../runtimeConfig";
 import { PageHeader } from "../Shell";
 import { useMe } from "../shared";
 

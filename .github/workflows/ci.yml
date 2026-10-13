@@ -72,6 +72,8 @@ jobs:
           .venv/bin/prospector create-user --email admin@exora.test --name "E2E Admin" --role admin --password 'E2ePass!2026'
           .venv/bin/prospector create-user --email sdr@exora.test --name "E2E SDR" --role sdr --password 'E2ePass!2026'
           .venv/bin/prospector create-user --email viewer@exora.test --name "E2E Viewer" --role viewer --password 'E2ePass!2026'
+          # The browser tests act on company rows: load the example accounts (no crawl of the .example sites).
+          .venv/bin/prospector import --no-enrich
           nohup .venv/bin/prospector serve --port 8099 > server.log 2>&1 &
           for i in $(seq 1 60); do curl -fsS http://127.0.0.1:8099/api/health && break; sleep 1; done
           curl -fsS http://127.0.0.1:8099/api/config
@@ -83,6 +85,8 @@ jobs:
           foreach ($u in @(@('admin','E2E Admin'), @('sdr','E2E SDR'), @('viewer','E2E Viewer'))) {
             .venv\Scripts\prospector.exe create-user --email "$($u[0])@exora.test" --name $u[1] --role $u[0] --password 'E2ePass!2026'
           }
+          .venv\Scripts\prospector.exe import --no-enrich
+          if ($LASTEXITCODE -ne 0) { exit 1 }
           Start-Process -FilePath .venv\Scripts\prospector.exe -ArgumentList 'serve','--port','8099' -RedirectStandardOutput server.log -RedirectStandardError server.err.log
           $up = $false
           foreach ($i in 1..60) { try { Invoke-RestMethod http://127.0.0.1:8099/api/health; $up = $true; break } catch { Start-Sleep 1 } }

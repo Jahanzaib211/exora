@@ -23,13 +23,19 @@ from .settings import Settings, load_settings
 app = typer.Typer(no_args_is_help=True, add_completion=False, help=f"{BRAND}: lead discovery and outreach.")
 
 
-@app.callback()
-def main(
-    version: bool = typer.Option(False, "--version", help="Print the version and exit.", is_eager=True),
-) -> None:
-    if version:
+def _print_version(value: bool) -> None:
+    # An eager option callback runs while arguments are parsed, before Typer insists on a subcommand.
+    if value:
         typer.echo(f"{BRAND} {__version__}")
         raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False, "--version", help="Print the version and exit.", is_eager=True, callback=_print_version
+    ),
+) -> None:
     # Settings read ./.env themselves, but several optional integrations (GitHub token, SEC contact, SMTP
     # probe, crawler User-Agent) read os.environ, and the crawler runs as a child process. Exporting the
     # file once here makes every documented variable work from .env. Real environment variables win.
@@ -144,6 +150,42 @@ def init(
         )
         _add_user(settings, email, name, Role.ADMIN, password)
     typer.echo(f"Done. Start {BRAND} with: prospector serve  (then open http://127.0.0.1:8090)")
+
+
+@app.command("import")
+def import_accounts(
+    path: str = typer.Argument(
+        "", help="CSV in the seed-sheet format (see playbook/accounts.example.csv). Default: PROSPECTOR_SEED_CSV."
+    ),
+    no_enrich: bool = typer.Option(False, "--no-enrich", help="Do not queue website crawls for new companies."),
+) -> None:
+    """Import target accounts from a CSV right now, without waiting for the data engine."""
+    from .discovery import RunError, execute, validate_params
+    from .models import Run, utcnow
+
+    settings = load_settings()
+    if no_enrich:
+        settings.auto_enrich = False
+    try:
+        params = validate_params("seed-sheet", {"path": path} if path else {})
+    except RunError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    db = Database(settings.database_url)
+    db.create_all()
+    with db.session() as s:
+        # Created already claimed ("running"), so a worker in a running server never picks it up as well.
+        run = Run(source="seed-sheet", params=params, status="running", started_at=utcnow())
+        s.add(run)
+        s.flush()
+        run_id = run.id
+    execute(db, run_id, settings)
+    with db.session() as s:
+        run = s.get(Run, run_id)
+        status, message = run.status, run.message
+        summary = f"{run.found} rows: {run.created} new, {run.updated} updated, {run.errors} failed"
+    typer.echo(f"Import {status}: {summary}" + (f" ({message})" if message else ""))
+    if status != "done":
+        raise typer.Exit(1)
 
 
 @app.command()

@@ -14,3 +14,14 @@ export let ORG = "";
 export function setOrg(name: string | null | undefined): void {
   ORG = (name ?? "").trim();
 }
+
+/**
+ * Whether an outreach engine is configured (`/api/config` → `outreach`). Assumed on until the
+ * server says otherwise. Kept here rather than in runtimeConfig.ts so a lazy page can read it
+ * without importing the bootstrap module, which would pull app code out of the entry chunk.
+ */
+export let OUTREACH_ENABLED = true;
+
+export function setOutreachEnabled(value: boolean): void {
+  OUTREACH_ENABLED = value;
+}

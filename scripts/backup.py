@@ -16,6 +16,7 @@ non-SQLite URL rather than silently producing a corrupt file.
 from __future__ import annotations
 
 import argparse
+import re
 import sqlite3
 import sys
 from datetime import UTC, datetime
@@ -35,8 +36,12 @@ def sqlite_path(database_url: str) -> Path:
             "For Postgres use: pg_dump --format=custom --file <out>.dump <url>"
         )
     raw = database_url[len(prefix) :]
-    # sqlite:////abs/path keeps three slashes + absolute path; sqlite:///rel/path has none after the prefix.
-    path = Path(raw[1:] if raw.startswith("/") and not raw.startswith("//") else raw)
+    # After the prefix: "/abs/path.db" (POSIX absolute, from four slashes), "C:/x.db" (Windows absolute) or
+    # "rel/path.db". Only a slash in front of a Windows drive letter ("/C:/x.db") is dropped; stripping every
+    # leading slash turned the POSIX absolute path /app/data/x.db into the relative app/data/x.db.
+    if re.match(r"^/[A-Za-z]:[\\/]", raw):
+        raw = raw[1:]
+    path = Path(raw)
     if not path.is_absolute():
         path = ROOT / path
     return path
