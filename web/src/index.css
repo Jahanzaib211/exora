@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Global styles.
+
+   Everything visual now resolves through antd tokens or the custom properties
+   declared here, so light/dark switching is a single attribute change on <html>
+   rather than a per-component rewrite. The three `!important` overrides that
+   used to fight the design system are gone.
+   ========================================================================== */
+
+/* Order matters: the explicit light override must win over the media query, so a
+   user who picked light while their OS is dark still gets light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme="light"]) {
+    --exora-border: #26303f;
+    --exora-surface-sunken: #111927;
+    --exora-focus-ring: #6d92ff;
+    --exora-mark-danger: #2a1614;
+    color-scheme: dark;
+  }
+}
+
+:root,
+:root[data-scheme="light"] {
+  --exora-border: #eef0f4;
+  --exora-surface-sunken: #fafbfd;
+  --exora-focus-ring: #2f5bea;
+  --exora-mark-danger: #fff1f0;
+  color-scheme: light;
+}
+
+:root[data-scheme="dark"] {
+  --exora-border: #26303f;
+  --exora-surface-sunken: #111927;
+  --exora-focus-ring: #6d92ff;
+  --exora-mark-danger: #2a1614;
+  color-scheme: dark;
+}
+
+/*
+  Layout containment.
+
+  Wide data tables scroll inside their own container (antd's `scroll={{ x }}`), but the
+  container must also be allowed to shrink. A flex/grid child keeps its content width
+  by default, so a 900px-wide table pushed the whole page sideways and every tab
+  overflowed on a phone. `min-width: 0` is what allows it to shrink.
+*/
+.ant-layout,
+.ant-layout-has-sider {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.ant-layout-content,
+.ant-layout-content > * {
+  min-width: 0;
+}
+
+.ant-table-wrapper {
+  max-width: 100%;
+}
+
+/* Keyboard focus must be obvious everywhere; the default antd ring is easy to miss
+   on dense tables. */
+:focus-visible {
+  outline: 2px solid var(--exora-focus-ring);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+/* --------------------------------------------------------------- markdown */
+/* Rendered markdown in the Docs section. */
+.md { line-height: 1.6; overflow-wrap: anywhere; }
+.md table { border-collapse: collapse; margin: 12px 0; display: block; overflow-x: auto; max-width: 100%; }
+.md th, .md td { border: 1px solid var(--exora-border); padding: 6px 10px; vertical-align: top; text-align: left; }
+.md th { background: var(--exora-surface-sunken); }
+.md img { max-width: 100%; height: auto; }
+.md code { background: var(--exora-surface-sunken); padding: 1px 4px; border-radius: 4px; }
+.md pre { background: var(--exora-surface-sunken); padding: 12px; border-radius: 6px; overflow-x: auto; }
+.md pre code { padding: 0; }
+.md blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--exora-border); color: var(--exora-muted, #57606a); }
+.md h1 { font-size: 1.6em; margin-top: 8px; }
+.md h2 { font-size: 1.3em; border-bottom: 1px solid var(--exora-border); padding-bottom: 4px; margin-top: 24px; }
+.md h3 { font-size: 1.12em; margin-top: 20px; }
+.md h4 { font-size: 1em; margin-top: 16px; }
+.md ul, .md ol { padding-left: 22px; }
+.md li { margin: 2px 0; }
+.md hr { border: none; border-top: 1px solid var(--exora-border); margin: 20px 0; }
+
+/* Rows explicitly marked as not-applicable (archived events, rejected companies). */
+.ant-table-row-disabled td { opacity: 0.55; }
+
+/* -------------------------------------------------------------- app chrome */
+.filter-label { font-size: 12px; color: var(--exora-muted, #5b6577); margin-bottom: 4px; font-weight: 600; }
+
+.bulk-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 12px; background: #eef3ff; border-bottom: 1px solid #d6e0ff; font-weight: 600;
+}
+:root[data-scheme="dark"] .bulk-bar { background: #17233a; border-bottom-color: #26375c; }
+
+.table-toolbar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid var(--exora-border);
+}
+
+/* Table rows that open a drawer are focusable, so give them a real affordance. */
+.row-clickable { cursor: pointer; }
+.row-clickable:focus-visible { outline: 2px solid var(--exora-focus-ring); outline-offset: -2px; }
+
+/* Keep long free-text columns from stretching the table. */
+.cell-clip {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; word-break: break-word;
+}
+
+/* Filter rail becomes a Drawer below this width — keep in step with SIDER_BP in Shell. */
+.filter-rail { flex: 0 0 248px; }
+@media (max-width: 991px) { .filter-rail { flex: 0 0 100%; } }
+
+/* Header theme switch. A real <button> so it is focusable and announces its state. */
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+.theme-toggle:hover { background: var(--exora-surface-sunken, #f4f6fa); }
+
+/* Dense numeric columns line up on the decimal. */
+.num { font-variant-numeric: tabular-nums; }
+
+/* Respect the OS "reduce motion" preference. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Screen-reader-only helper. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

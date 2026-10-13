@@ -1,0 +1,48 @@
+{
+  "name": "prospector-web",
+  "private": true,
+  "//overrides": "path-to-regexp is pinned for GHSA-j3q9-mxjg-w52f / GHSA-27v5-c462-wpq7, reached only via @refinedev/antd -> @ant-design/pro-layout. Same major, fixed in 8.4.x; `npm audit fix --force` would instead downgrade @refinedev/antd to 6.0.0.",
+  "version": "0.3.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run check:data && tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "check:data": "node src/check-data-numbers.mjs",
+    "preview": "vite preview",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report",
+    "e2e:screenshots": "playwright test screenshots.spec.ts",
+    "e2e:install": "playwright install chromium",
+    "verify": "npm run build && npm run e2e"
+  },
+  "dependencies": {
+    "@ant-design/icons": "5.6.1",
+    "@refinedev/antd": "6.0.3",
+    "@refinedev/core": "5.0.12",
+    "@refinedev/react-router": "2.0.4",
+    "@tanstack/react-query": "5.104.1",
+    "antd": "5.29.3",
+    "dayjs": "1.11.23",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-markdown": "10.1.0",
+    "react-router": "7.18.4",
+    "remark-gfm": "4.0.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.2"
+  },
+  "overrides": {
+    "path-to-regexp": "8.4.2"
+  }
+}

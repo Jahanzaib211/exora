@@ -1,0 +1,6 @@
+lead_id,company,website,country,city,segment,size_or_rank,company_phone,company_general_email,linkedin_company_url,named_contact,named_contact_title,contact_source_url,source_url,fit_signal
+EX-001,Northwind Legal LLP,https://northwind-legal.example,GB,London,Law firm,11-50,,info@northwind-legal.example,,Alex Example,Managing Partner,https://northwind-legal.example/team,https://northwind-legal.example,Hiring a legal operations lead (example signal)
+EX-002,Contoso Accounting,https://contoso-accounting.example,US,Chicago,Accounting/CPA,11-50,,hello@contoso-accounting.example,,,,,https://contoso-accounting.example,Opened a second office this year (example signal)
+EX-003,Fabrikam IT Partners,https://fabrikam-it.example,DE,Berlin,MSP/IT partner,51-200,,kontakt@fabrikam-it.example,,Sam Example,Head of Partnerships,https://fabrikam-it.example/about,https://fabrikam-it.example,Launched a managed AI service (example signal)
+EX-004,Tailspin Clinics,https://tailspin-clinics.example,US,Austin,Healthcare/Clinic,51-200,,,,,,,https://tailspin-clinics.example,Expanding to three new locations (example signal)
+EX-005,Wingtip AI,https://wingtip-ai.example,PT,Lisbon,AI startup,1-10,,team@wingtip-ai.example,,Jordan Example,Founder,https://wingtip-ai.example/about,https://wingtip-ai.example,Raised a seed round (example signal)

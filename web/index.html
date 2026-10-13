@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="Exora — self-hosted prospecting CRM: discover companies and people from lawful public sources, verify and score every field, and hand qualified leads to the outreach engine." />
+
+    <!--
+      Content Security Policy.
+
+      The backend already sends an equivalent header (see src/prospector/api.py); this
+      meta tag is defence in depth for the case where the built SPA is served by
+      something other than the FastAPI app (a static host, a CDN).
+
+      Notes on the directives:
+      - 'unsafe-inline' for styles: antd injects critical CSS at runtime.
+      - 'unsafe-inline' for scripts: the pre-paint colour-scheme script below is inline.
+        It is static and contains no interpolation, so it introduces no injection risk.
+      - frame-ancestors is meaningless in a meta tag (the console warns about it); clickjacking
+        protection belongs in the response header, which the backend sets.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <meta name="referrer" content="same-origin" />
+
+    <!-- Keep in step with src/brand.ts (BRAND). -->
+    <title>Exora</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

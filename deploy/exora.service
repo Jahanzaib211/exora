@@ -1,0 +1,37 @@
+# systemd unit: run Exora as a service on a Linux server without Docker.
+#
+#   sudo useradd --system --create-home --home-dir /opt/exora exora
+#   sudo -u exora git clone https://github.com/Jahanzaib211/exora.git /opt/exora/app
+#   cd /opt/exora/app && sudo -u exora ./scripts/setup.sh
+#   sudo cp deploy/exora.service /etc/systemd/system/exora.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now exora
+#   journalctl -u exora -f
+#
+# The app listens on 127.0.0.1:8090. Put a reverse proxy with HTTPS in front (Caddy, nginx, Cloudflare
+# Tunnel) and set PROSPECTOR_COOKIE_SECURE=true and PROSPECTOR_TRUST_PROXY=true in .env.
+
+[Unit]
+Description=Exora prospecting CRM (web app + data engine)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=exora
+Group=exora
+WorkingDirectory=/opt/exora/app
+# Libraries that cache to $HOME (tldextract's suffix list) write under data/ instead, the one writable path.
+Environment=TLDEXTRACT_CACHE=/opt/exora/app/data/cache/tldextract
+Environment=XDG_CACHE_HOME=/opt/exora/app/data/cache
+ExecStart=/opt/exora/app/.venv/bin/prospector serve --host 127.0.0.1 --port 8090
+Restart=on-failure
+RestartSec=5
+# Hardening: the app only writes under its own data/ folder.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/exora/app/data
+
+[Install]
+WantedBy=multi-user.target

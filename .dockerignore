@@ -1,0 +1,23 @@
+# Build context is the repository root. Keep secrets, data and local builds out of the image.
+.git/
+.github/
+.env
+.env.*
+!.env.example
+data/
+**/*.db
+**/*.db-*
+**/*.log
+.venv/
+**/__pycache__/
+**/*.egg-info/
+build/
+.pytest_cache/
+.ruff_cache/
+tests/
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+web/screenshots/
+web/tests/
