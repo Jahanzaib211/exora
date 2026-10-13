@@ -816,13 +816,15 @@ def create_app(settings: Settings, bridge: EngineBridge | None = None) -> FastAP
 
     @app.get("/api/config")
     def public_config() -> dict[str, Any]:
-        """What the front end needs before sign-in: display names and the operator clock. Nothing secret."""
+        """What the front end needs before sign-in: display names, the operator clock and which optional
+        features are switched on (so screens for an absent outreach engine never fire failing requests)."""
         return {
             "brand": BRAND,
             "tagline": TAGLINE,
             "org": settings.org_name,
             "timezone": settings.operator_timezone,
             "version": __version__,
+            "outreach": bool(settings.engine_enabled and settings.engine_config),
         }
 
     # ---- observability ------------------------------------------------------------------------------

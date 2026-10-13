@@ -9,7 +9,7 @@ REST over JSON. The live, typed schema is at `/api/openapi.json`, with interacti
 | Endpoint | Role | Screen | Source of truth |
 |---|---|---|---|
 | `GET /api/health` | public | Health checks (Docker, Coolify, systemd) | `{"ok": true, "engine": <bool>}` |
-| `GET /api/config` | public | Sign-in, shell (before first render) | `Settings`: brand, tagline, `org_name`, `operator_timezone`, version |
+| `GET /api/config` | public | Sign-in, shell (before first render) | `Settings`: brand, tagline, `org_name`, `operator_timezone`, version, `outreach` (engine configured) |
 | `POST /api/auth/login` | public | Sign-in | `users` table |
 | `POST /api/auth/logout`, `GET /api/auth/me` | signed in | Sign-in, shell | `users`, session |
 | `GET /api/companies` | viewer | Companies | `companies`; filters `q`, `segment`, `country`, `status`, `min_quality`, `has_email`, `has_phone`, `has_people`; `sort`, `page`, `page_size` |

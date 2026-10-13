@@ -16,9 +16,12 @@ export interface RuntimeConfig {
   org: string;
   timezone: string;
   version: string;
+  outreach: boolean;
 }
 
 export let APP_VERSION = "";
+/** Whether an outreach engine is configured. Assumed on until the server says otherwise. */
+export let OUTREACH_ENABLED = true;
 
 export async function loadRuntimeConfig(timeoutMs = 3000): Promise<void> {
   const controller = new AbortController();
@@ -30,6 +33,7 @@ export async function loadRuntimeConfig(timeoutMs = 3000): Promise<void> {
     setOrg(cfg.org);
     setOperatorTz(cfg.timezone);
     APP_VERSION = cfg.version ?? "";
+    if (typeof cfg.outreach === "boolean") OUTREACH_ENABLED = cfg.outreach;
   } catch {
     // Offline, aborted or not JSON: keep the defaults.
   } finally {

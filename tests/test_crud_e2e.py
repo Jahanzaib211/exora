@@ -204,8 +204,8 @@ def test_every_endpoint_requires_a_session(app):
     assert c.get("/api/health").json() == {"ok": True, "engine": False}
     # so is the display config the sign-in page needs, and it carries nothing but names and the clock
     cfg = c.get("/api/config").json()
-    assert set(cfg) == {"brand", "tagline", "org", "timezone", "version"}
-    assert cfg["brand"] == "Exora" and cfg["timezone"] == "UTC"
+    assert set(cfg) == {"brand", "tagline", "org", "timezone", "version", "outreach"}
+    assert cfg["brand"] == "Exora" and cfg["timezone"] == "UTC" and cfg["outreach"] is False
 
 
 def test_viewer_can_read_everything(app, db):

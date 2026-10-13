@@ -81,3 +81,12 @@ def test_wikidata_dedupes_and_skips_unlabeled():
 
     recs = list(WikidataConnector(client(handler)).fetch({"segment": "Law", "country": "GB", "limit": 10}))
     assert [(r.name, r.website, r.city) for r in recs] == [("Big Law LLP", "https://biglaw.com", "London")]
+
+
+def test_overpass_endpoints_put_the_operators_server_first(monkeypatch):
+    from prospector.connectors.osm import OVERPASS, overpass_endpoints
+
+    monkeypatch.delenv("PROSPECTOR_OVERPASS_URL", raising=False)
+    assert overpass_endpoints() == OVERPASS
+    monkeypatch.setenv("PROSPECTOR_OVERPASS_URL", f"https://op.example.com/api/interpreter, {OVERPASS[0]}")
+    assert overpass_endpoints() == ["https://op.example.com/api/interpreter", *OVERPASS]

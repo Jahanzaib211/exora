@@ -13,9 +13,11 @@ import { REFRESH } from "../live";
 import { PageHeader } from "../Shell";
 import type { Doc, DocGroup } from "../types/api";
 
+/** Opened when the URL names no document: the first of these that the catalogue serves, else its first entry. */
+const START_DOCS = ["README.md", "00_README_Start_Here.md"];
+
 export function Docs() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const selected = searchParams.get("doc") || "00_README_Start_Here.md";
   const filter = (searchParams.get("filter") ?? "").trim();
 
   const groups = useQuery({
@@ -23,6 +25,13 @@ export function Docs() {
     queryFn: () => api<DocGroup[]>("/api/docs"),
     refetchInterval: REFRESH.static,
   });
+
+  // Never request a hardcoded path: which documents exist depends on PROSPECTOR_DOCS_ROOT.
+  const startDoc = useMemo(() => {
+    const paths = (groups.data ?? []).flatMap((g) => g.docs.map((d) => d.path));
+    return START_DOCS.find((p) => paths.includes(p)) ?? paths[0] ?? "";
+  }, [groups.data]);
+  const selected = searchParams.get("doc") || startDoc;
 
   const doc = useQuery({
     queryKey: qk.doc(selected),
@@ -63,7 +72,7 @@ export function Docs() {
     <>
       <PageHeader
         title="Documents"
-        subtitle="The campaign documents, served read-only from the markdown in this repository."
+        subtitle="The playbook and documentation, served read-only from the markdown in this repository."
       />
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={7}>

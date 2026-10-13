@@ -25,7 +25,9 @@ import {
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { api, post } from "../api";
+import { EmptyState } from "../components/EmptyState";
 import { REFRESH } from "../live";
+import { OUTREACH_ENABLED } from "../runtimeConfig";
 import { PageHeader } from "../Shell";
 import { useMe } from "../shared";
 
@@ -599,7 +601,34 @@ function PromoteTab() {
 }
 
 // ---- page ------------------------------------------------------------------------------------
+/**
+ * The outreach engine is an optional, separately installed package. Without one every outreach
+ * endpoint answers 503, so the console is not mounted at all: the page explains what is missing
+ * instead of firing requests that can only fail.
+ */
 export function Outreach() {
+  return OUTREACH_ENABLED ? <OutreachConsole /> : <OutreachNotConnected />;
+}
+
+function OutreachNotConnected() {
+  return (
+    <>
+      <PageHeader title="Outreach" subtitle="Promote companies, approve drafts and log LinkedIn work" />
+      <EmptyState
+        title="No outreach engine is connected"
+        hint={
+          <>
+            Discovery, companies, people, tasks and the plan all work without one. To send sequences with human
+            approval from here, install an outreach engine and set <Typography.Text code>PROSPECTOR_ENGINE_ENABLED</Typography.Text>{" "}
+            and <Typography.Text code>PROSPECTOR_ENGINE_CONFIG</Typography.Text> (see docs/DEPLOYMENT.md, section 8).
+          </>
+        }
+      />
+    </>
+  );
+}
+
+function OutreachConsole() {
   const qc = useQueryClient();
   const { message } = App.useApp();
   const { canEdit } = useMe();

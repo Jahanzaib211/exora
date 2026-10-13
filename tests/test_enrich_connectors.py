@@ -281,6 +281,13 @@ def test_sec_formd_unavailable_search_returns_nothing():
     assert list(conn.fetch({})) == []
 
 
+def test_sec_formd_blocked_without_contact_fails_loudly():
+    # EDGAR answers 403 to clients without a contact address; that must not pass as "no filings this week".
+    conn = SecFormDConnector(client(lambda r: httpx.Response(403)))
+    with pytest.raises(RuntimeError, match="PROSPECTOR_CONTACT_EMAIL"):
+        list(conn.fetch({}))
+
+
 def test_sec_formd_unreadable_filing_is_skipped():
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/LATEST/search-index":

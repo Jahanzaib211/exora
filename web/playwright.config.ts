@@ -6,6 +6,12 @@ import { defineConfig, devices } from "@playwright/test";
  *
  *   npm run build          # web/dist must exist first (the backend serves it)
  *   npx playwright test    # assumes the server is already up on E2E_BASE_URL
+ *
+ * The specs sign in as three accounts (tests/e2e/fixtures.ts). On a throwaway database, from the repo root:
+ *   prospector create-user --email admin@exora.test --name "E2E Admin" --role admin --password 'E2ePass!2026'
+ *   (and the same for sdr@exora.test / "E2E SDR" and viewer@exora.test / "E2E Viewer")
+ *   prospector serve --port 8099
+ * CI does exactly this (.github/workflows/ci.yml, job fresh-install).
  */
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:8099";
 

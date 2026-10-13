@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, tests and build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.22"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Lockfile matches pyproject.toml
+        run: uv lock --check
+      - name: Install
+        run: uv sync --frozen --extra dev
+      - name: Lint
+        run: uv run --frozen ruff check src tests scripts
+      - name: Format
+        run: uv run --frozen ruff format --check src tests scripts
+      - name: Tests
+        run: uv run --frozen pytest -q
+      - name: Web build (data guard, typecheck, bundle)
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+  fresh-install:
+    name: Fresh install with the setup script (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Setup (Linux)
+        if: runner.os != 'Windows'
+        run: ./scripts/setup.sh --no-admin
+      - name: Setup (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -NoAdmin
+      - name: Start and smoke-test (Linux)
+        if: runner.os != 'Windows'
+        run: |
+          .venv/bin/prospector create-user --email admin@exora.test --name "E2E Admin" --role admin --password 'E2ePass!2026'
+          .venv/bin/prospector create-user --email sdr@exora.test --name "E2E SDR" --role sdr --password 'E2ePass!2026'
+          .venv/bin/prospector create-user --email viewer@exora.test --name "E2E Viewer" --role viewer --password 'E2ePass!2026'
+          nohup .venv/bin/prospector serve --port 8099 > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -fsS http://127.0.0.1:8099/api/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8099/api/config
+          curl -fsS http://127.0.0.1:8099/ | grep -q 'id="root"'
+      - name: Start and smoke-test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          foreach ($u in @(@('admin','E2E Admin'), @('sdr','E2E SDR'), @('viewer','E2E Viewer'))) {
+            .venv\Scripts\prospector.exe create-user --email "$($u[0])@exora.test" --name $u[1] --role $u[0] --password 'E2ePass!2026'
+          }
+          Start-Process -FilePath .venv\Scripts\prospector.exe -ArgumentList 'serve','--port','8099' -RedirectStandardOutput server.log -RedirectStandardError server.err.log
+          $up = $false
+          foreach ($i in 1..60) { try { Invoke-RestMethod http://127.0.0.1:8099/api/health; $up = $true; break } catch { Start-Sleep 1 } }
+          if (-not $up) { Get-Content server.err.log; exit 1 }
+          Invoke-RestMethod http://127.0.0.1:8099/api/config
+          if ((Invoke-WebRequest http://127.0.0.1:8099/).Content -notmatch 'id="root"') { exit 1 }
+      - name: Browser tests (Playwright)
+        if: runner.os != 'Windows'
+        working-directory: web
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8099
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - name: Upload Playwright report
+        if: failure() && runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 7
+      - name: Server log
+        if: failure()
+        shell: bash
+        run: cat server.log server.err.log data/logs/*.log 2>/dev/null | tail -n 200 || true
+
+  docker:
+    name: Docker image and compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        run: docker compose build
+      - name: Start (no .env: the secret is generated on the volume)
+        run: docker compose up -d
+      - name: Wait until healthy
+        run: |
+          for i in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:8090/api/health && exit 0
+            sleep 2
+          done
+          docker compose ps; docker compose logs app; exit 1
+      - name: Create an admin and sign in
+        run: |
+          docker compose exec -T app prospector create-user --email admin@example.com --name Admin --role admin --password 'Ci-Check-2026!'
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8090/api/auth/login \
+            -H 'Content-Type: application/json' -H 'X-Requested-With: prospector' \
+            -d '{"email":"admin@example.com","password":"Ci-Check-2026!"}')
+          test "$code" = "200"
+          curl -fsS http://127.0.0.1:8090/ | grep -q 'id="root"'
+      - name: Backup script works in the image
+        run: docker compose exec -T app python scripts/backup.py
+      - name: Logs
+        if: always()
+        run: docker compose logs app | tail -n 100
+      - name: Stop
+        if: always()
+        run: docker compose down -v

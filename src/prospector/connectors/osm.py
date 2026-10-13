@@ -6,6 +6,7 @@ User-Agent; Overpass is shared infrastructure, so queries are bounded to one cit
 
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from typing import Any
 
@@ -14,6 +15,14 @@ from .base import Connector, ParamSpec
 
 NOMINATIM = "https://nominatim.openstreetmap.org/search"
 OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
+
+
+def overpass_endpoints() -> list[str]:
+    """Public Overpass servers are shared and often busy; PROSPECTOR_OVERPASS_URL (comma-separated) puts your own
+    or a paid instance first, with the public ones kept as fallbacks."""
+    own = [u.strip() for u in os.environ.get("PROSPECTOR_OVERPASS_URL", "").split(",") if u.strip()]
+    return own + [u for u in OVERPASS if u not in own]
+
 
 # segment -> OSM tag filters
 SEGMENT_TAGS: dict[str, list[str]] = {
@@ -56,14 +65,17 @@ class OsmConnector(Connector):
         query = f"[out:json][timeout:60];({filters});out tags center;"
         data = None
         last_exc: Exception | None = None
-        for endpoint in OVERPASS:
+        for endpoint in overpass_endpoints():
             try:
                 data = self.http.post(endpoint, data={"data": query}, interval=2.0, timeout=90).json()
                 break
             except Exception as exc:  # busy mirror: try the next one
                 last_exc = exc
         if data is None:
-            raise RuntimeError(f"all Overpass endpoints failed: {last_exc}")
+            raise RuntimeError(
+                f"all Overpass endpoints failed ({last_exc}). The public servers are often overloaded: retry the "
+                "run later, or set PROSPECTOR_OVERPASS_URL to your own Overpass instance."
+            )
         limit = int(params.get("limit") or 200)
         n_out = 0
         for el in data.get("elements", []):

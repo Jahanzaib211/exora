@@ -22,6 +22,8 @@ from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import httpx
+
 from ..resolve import CompanyRecord, EvidenceRecord, PersonRecord, api_evidence
 from .base import Connector, ParamSpec, user_agent
 
@@ -156,6 +158,15 @@ class SecFormDConnector(Connector):
         query = {"forms": "D", "startdt": start.isoformat(), "enddt": today.isoformat(), "from": 0}
         try:
             body = self.http.get(SEARCH, params=query, headers=sec_headers(), interval=SEC_INTERVAL, timeout=60).json()
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 403:
+                # EDGAR blocks clients without a contact address. Reporting "0 found" here would look like a
+                # quiet week, so fail the run with the fix instead.
+                raise RuntimeError(
+                    "SEC EDGAR refused the request (HTTP 403): it requires a contact email in the User-Agent. "
+                    "Set PROSPECTOR_CONTACT_EMAIL (or PROSPECTOR_SEC_USER_AGENT) in .env and restart."
+                ) from exc
+            return  # EDGAR unavailable or rate-limited: the run ends quietly, nothing is claimed
         except Exception:
             return  # EDGAR unavailable or rate-limited: the run ends quietly, nothing is claimed
         hits = ((body or {}).get("hits") or {}).get("hits") or []
